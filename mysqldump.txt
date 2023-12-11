@@ -1,0 +1,13 @@
+#! /bin/bash
+
+for DB in $(mysql -u root -p'master_pas' -e 'SHOW DATABASES' -s --skip-column-names);
+do
+   mkdir $DB;
+   echo 'Создан каталог' $DB;
+   for TB in $(mysql -u root -p'master_pas' -e "SHOW TABLES FROM $DB;");
+   do
+     echo "Найдена таблица' $TB 'в базе' $DB";
+     mysqldump -u root -p'master_pas' --master-data=2 $DB $TB > "$DB/$DB-$TB.sql";
+   done
+done
+

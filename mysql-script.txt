@@ -1,0 +1,42 @@
+# Устанавливаем пароль
+ALTER USER 'root'@'localhost' IDENTIFIED WITH 'caching_sha2_password' BY 'Testpass1$';
+
+# Тип бинлога
+show variables like '%binlog%';
+
+# Найти server_id
+SELECT @@server_id;
+
+# Начинаем слушать на всех IP /etc/my.cnf (не нужно на CentOS 7)
+bind-address = 0.0.0.0
+
+#####################################################
+# На Мастере
+#####################################################
+
+# Создаём пользователя для реплики
+CREATE USER otus@'%' IDENTIFIED WITH 'caching_sha2_password' BY 'otus'; 
+# Даём ему права на репликацию
+GRANT REPLICATION SLAVE ON *.* TO otus@'%';
+
+# Смотрим пользователей
+SELECT User, Host FROM mysql.user;
+
+# Закрываем и блокируем все таблицы
+FLUSH TABLES WITH READ LOCK;
+
+# Смотрим статус Мастера
+SHOW MASTER STATUS;
+
+######################################################
+# На Слейве
+######################################################
+
+SHOW GLOBAL VARIABLES LIKE 'caching_sha2_password_public_key_path';
+SHOW STATUS LIKE 'Caching_sha2_password_rsa_public_key'\G
+
+# необходимо получить публичный ключ
+STOP SLAVE;
+CHANGE MASTER TO MASTER_HOST='192.168.57.165', MASTER_USER='otus', MASTER_PASSWORD='otus', MASTER_LOG_FILE='binlog.000005', MASTER_LOG_POS=688, GET_MASTER_PUBLIC_KEY = 1;
+START SLAVE;
+show slave status\G
